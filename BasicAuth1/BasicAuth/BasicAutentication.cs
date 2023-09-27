@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace BasicAuth1.BasicAuth
                 try
                 {
                     string authToken = actionContext.Request.Headers.Authorization.Parameter;
-                    //username:password base64 encoded
+                    //username:password base64 encoded   YWRtaW46cGFzc3dvcmQ=
                     string decodedAuth = Encoding.UTF8.GetString(Convert.FromBase64String(authToken));
                     string[] usernamepassword = decodedAuth.Split(':');
                     string username = usernamepassword[0];
@@ -33,7 +34,23 @@ namespace BasicAuth1.BasicAuth
 
                     if (ValidateLogin.LoginUser(username, password))
                     {
-                        Thread.CurrentPrincipal = new GenericPrincipal(new GenericIdentity(username), null);
+                        var UserDetails = ValidateLogin.GetUserDetails(username,password);
+                        var identity = new GenericIdentity(username);
+                        identity.AddClaim(new Claim(ClaimTypes.Name,UserDetails.Username));
+                        identity.AddClaim(new Claim(ClaimTypes.Email, UserDetails.Email));
+
+                        IPrincipal principal = new GenericPrincipal(identity, UserDetails.Role.Split(','));
+
+                        Thread.CurrentPrincipal = principal;
+                           if(HttpContext.Current!=null)
+                            {
+                                HttpContext.Current.User = principal;
+                            }
+                        else
+                        {
+                            actionContext.Response = actionContext.Request.CreateErrorResponse(HttpStatusCode.Unauthorized, "Access Denied");
+                        }
+                           
                     }
                     else
                     {

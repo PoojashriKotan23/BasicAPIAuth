@@ -9,12 +9,30 @@ using System.Web.Http;
 
 namespace BasicAuth1.Controllers
 {
+    [RoutePrefix ("api/Employees")]
     [BasicAutentication]
     public class EmployeeController : ApiController
     {
-        public List<Employee> GetEmplpyees()
+        //GetFewEmployee
+        [Route("GetFewEmployee")]
+        [BasicAuthorizationAttribute(Roles="Employee")]
+        public HttpResponseMessage GetFewEmployee()
         {
-            return Employee.GetEmployee();
+            return Request.CreateResponse(HttpStatusCode.OK,Employee.GetEmployee().Where(e=>e.ID<103));
         }
-    }
+        [Route("GetMoreEmployee")]
+        [BasicAuthorizationAttribute(Roles = "User")]
+        //GetMoreEmployee
+        public HttpResponseMessage GetMoreEmployee()
+        {
+            return Request.CreateResponse(HttpStatusCode.OK, Employee.GetEmployee().Where(e => e.ID <106));
+        }
+        [Route("GetAllEmployee")]
+        [BasicAuthorizationAttribute(Roles = "Admin")]
+        //GetAllEmployee
+        public HttpResponseMessage GetAllEmployee()
+        {
+            return Request.CreateResponse(HttpStatusCode.OK, Employee.GetEmployee());
+        }
+    } 
 }
